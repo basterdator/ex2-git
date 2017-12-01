@@ -2,7 +2,7 @@
 // Introduction to Systems Programming
 //			 Winter 2017-2018
 //			TEL-AVIV UNIVERSITY
-//			     Exercise 1
+//			     Exercise 2
 // Uri Cohen                 302825807
 // Anton Chaplianka          310224209
 //												®
