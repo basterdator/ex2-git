@@ -14,3 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+int main(int argc, char *argv[]) // Main function, inputs are command line arguments, output is a txt file and the return value is 0 for a successful run and -1 for a failure.
+{
+
+}
