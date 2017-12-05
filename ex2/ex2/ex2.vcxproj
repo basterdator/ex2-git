@@ -111,6 +111,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
+    <ClCompile Include="CreateThreadSimple.c" />
+    <ClCompile Include="Ping.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CreateThreadSimple.h" />
+    <ClInclude Include="Ping.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
