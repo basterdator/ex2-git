@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <windows.h>
-#include "CreateThreadSimple.h"
 
 #define NUM_THREADS 2
 #define BRUTAL_TERMINATION_CODE 0x55
@@ -30,7 +29,7 @@ static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
 		NULL,            /*  default security attributes */
 		0,               /*  use default stack size */
 		p_start_routine, /*  thread function */
-		NULL,            /*  argument to thread function */
+		"ynet.co.il",            /*  argument to thread function */
 		0,               /*  use default creation flags */
 		p_thread_id);    /*  returns the thread identifier */
 
