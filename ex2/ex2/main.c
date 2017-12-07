@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
-#include "CreateThreadSimple.h"
 #include "Ping.h"
 
 typedef struct website_s {
@@ -18,6 +17,8 @@ typedef struct website_s {
 
 static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
 	LPDWORD p_thread_id);
+
+DWORD WINAPI Ping(LPVOID lpParam);
 
 int main() 
 {

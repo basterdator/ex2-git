@@ -1,3 +1,6 @@
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -5,11 +8,12 @@
 #include <tchar.h>
 
 
-#define TIMEOUT_IN_MILLISECONDS 5000
+#define TIMEOUT_IN_MILLISECONDS INFINITE
 #define BRUTAL_TERMINATION_CODE 0x55
 
-BOOL CreateProcessSimple(LPTSTR CommandLine, PROCESS_INFORMATION *ProcessInfoPtr);
+BOOL CreateProcessSimple(char *CommandLine, PROCESS_INFORMATION *ProcessInfoPtr);
 void CreateProcessSimpleMain(void);
+
 
 DWORD WINAPI Ping(LPVOID lpParam)
 {
@@ -19,15 +23,20 @@ DWORD WINAPI Ping(LPVOID lpParam)
 
 
 
-void CreateProcessSimpleMain(void)
+void CreateProcessSimpleMain()
 {
 	PROCESS_INFORMATION procinfo;
 	DWORD				waitcode;
 	DWORD				exitcode;
 	BOOL				retVal;
-	TCHAR				command[] = _T("ping -n 10");
-	TCHAR				website[] = _T(" ynet.co.il");
-	strcat_s(command, 200, website);
+	char				command[] = "ping -n 2";
+    char				website[] = " ynet.co.il";
+	char *p_str = NULL;
+	p_str = malloc((strlen(command) + strlen(website) )* sizeof(char) + 1);
+ 	strcpy(p_str, command);
+	strcat(p_str, website);
+
+
 																					
 																					/* <ISP> TCHAR is a win32  */
 																					/* generic char which may be either a simple (ANSI) char or a unicode char, */
@@ -35,8 +44,9 @@ void CreateProcessSimpleMain(void)
 																					/* is a string of TCHARs. Type LPCTSTR is a const string of TCHARs. */
 
 																					/*  Start the child process. */
-	retVal = CreateProcessSimple(command, &procinfo);
+	retVal = CreateProcessSimple(p_str, &procinfo);
 
+	free(p_str);
 
 	if (retVal == 0)
 	{
@@ -73,13 +83,11 @@ void CreateProcessSimpleMain(void)
 	GetExitCodeProcess(procinfo.hProcess, &exitcode);
 
 	printf("The exit code for the process is 0x%x\n", exitcode);
-
 	CloseHandle(procinfo.hProcess); /* Closing the handle to the process */
 	CloseHandle(procinfo.hThread); /* Closing the handle to the main thread of the process */
-
 }
 
-BOOL CreateProcessSimple(LPTSTR CommandLine, PROCESS_INFORMATION *ProcessInfoPtr)
+BOOL CreateProcessSimple(char *CommandLine, PROCESS_INFORMATION *ProcessInfoPtr)
 {
 	STARTUPINFO	startinfo = { sizeof(STARTUPINFO), NULL, 0 }; /* <ISP> here we */
 															  /* initialize a "Neutral" STARTUPINFO variable. Supplying this to */
