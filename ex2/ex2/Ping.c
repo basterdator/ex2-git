@@ -5,36 +5,42 @@
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
-#include <tchar.h>
+#include "Ping.h"
 
 
 #define TIMEOUT_IN_MILLISECONDS INFINITE
 #define BRUTAL_TERMINATION_CODE 0x55
 
 BOOL CreateProcessSimple(char *CommandLine, PROCESS_INFORMATION *ProcessInfoPtr);
-void CreateProcessSimpleMain(void);
+void CreateProcessSimpleMain(char *name);
 
 
 DWORD WINAPI Ping(LPVOID lpParam)
 {
-	CreateProcessSimpleMain();
+	website *p_w;
+	p_w = (website *)lpParam;
+	CreateProcessSimpleMain(p_w);
+	if ((*p_w).reachable == 0)
+	{
+		CreateProcessSimpleMain(p_w);
+	}
 	return 0;
 }
 
 
 
-void CreateProcessSimpleMain()
+void CreateProcessSimpleMain(website *p_w)
 {
+	website w = *p_w;
 	PROCESS_INFORMATION procinfo;
 	DWORD				waitcode;
 	DWORD				exitcode;
 	BOOL				retVal;
-	char				command[] = "ping -n 2";
-    char				website[] = " ynet.co.il";
+	char				command[] = "ping -n 1 ";
 	char *p_str = NULL;
-	p_str = malloc((strlen(command) + strlen(website) )* sizeof(char) + 1);
+	p_str = malloc((strlen(command) + strlen(w.name) )* sizeof(char) + 1);
  	strcpy(p_str, command);
-	strcat(p_str, website);
+	strcat(p_str,w.name);
 
 
 																					
@@ -45,7 +51,6 @@ void CreateProcessSimpleMain()
 
 																					/*  Start the child process. */
 	retVal = CreateProcessSimple(p_str, &procinfo);
-
 	free(p_str);
 
 	if (retVal == 0)
@@ -83,6 +88,15 @@ void CreateProcessSimpleMain()
 	GetExitCodeProcess(procinfo.hProcess, &exitcode);
 
 	printf("The exit code for the process is 0x%x\n", exitcode);
+	if (exitcode == 0)
+	{
+		(*p_w).reachable = 1;
+	}
+	else
+	{
+		(*p_w).reachable = 0;
+	}
+	printf("reachable is %d\n", (*p_w).reachable);
 	CloseHandle(procinfo.hProcess); /* Closing the handle to the process */
 	CloseHandle(procinfo.hThread); /* Closing the handle to the main thread of the process */
 }
