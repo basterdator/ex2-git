@@ -1,98 +1,94 @@
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-#include <windows.h>
+/* ==============================================
+Introduction to Systems Programming
+Winter 2017-2018
+TEL-AVIV UNIVERSITY
+Exercise 2
+Uri Cohen                 302825807
+Anton Chaplianka          310224209
+============================================== */
+
+// Includes --------------------------------------------------------------------
+#include<stdlib.h>
+#include<stdio.h>
+#include<windows.h>
+#include <limits.h>
 #include "Ping.h"
 
+// Global Variables -----------------------------------------------------------
+#define TIMEOUT_IN_MILI_SEC 10000
 
+// Declerations  --------------------------------------------------------------
+static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine, LPDWORD p_thread_id, website *lpParameter);
 
-
-#define NUM_THREADS 1
-#define BRUTAL_TERMINATION_CODE 0x55
-#define ERROR_CODE ((int)(-1))
-#define SUCCESS_CODE ((int)(0))
-
-static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
-	website *lpParameter,
-	LPDWORD p_thread_id);
-
-DWORD WINAPI Ping(LPVOID lpParam);
-
-
-
-int main() 
-{
-	char argvlike[] = "ynet.co.il";
-	website webby;
-	webby.name = &argvlike;
-	webby.reachable = 0;
-
-	HANDLE p_thread_handles[NUM_THREADS];
-	DWORD p_thread_ids[NUM_THREADS];
-	DWORD wait_code;
-	BOOL ret_val;
-	size_t i;
-
-
-	/* Prepare parameters for thread */
-
-
-	p_thread_handles[0] = CreateThreadSimple(Ping, &webby, &p_thread_ids[0]);
-
-	wait_code = WaitForSingleObject(p_thread_handles[0], INFINITE);
-	if (WAIT_OBJECT_0 != wait_code)
+// Main  ----------------------------------------------------------------------
+int main(int argc, char *argv[]) {
+	if (argc < 2)
 	{
-		printf("Error when waiting");
-		return ERROR_CODE;
+		printf("ERROR: Not enough input arguments");
+		return -1;
+	}
+	int num_of_threads = argc - 1;
+	HANDLE *p_thread_handles = malloc(sizeof(HANDLE)*num_of_threads);
+	DWORD *p_thread_ids = malloc(sizeof(DWORD)*num_of_threads);
+	website *websites_array = malloc(sizeof(website)*num_of_threads);
+	DWORD *exitcode_array = malloc(sizeof(DWORD)*num_of_threads);
+	int i;
+	for (i = 0; i < num_of_threads; i++) { // initializing websites array
+		websites_array[i].name = argv[i + 1];
+		websites_array[i].reachable = 0;
+	}
+	for (i = 0; i < num_of_threads; i++) {
+		p_thread_handles[i] = CreateThreadSimple(Ping, &p_thread_ids[i], &websites_array[i]);
+	}
+	DWORD waitcode;
+	waitcode = WaitForMultipleObjects(num_of_threads, p_thread_handles, 1, TIMEOUT_IN_MILI_SEC);
+	if (waitcode != WAIT_OBJECT_0) {
+		printf("error wait for multiple objects");
+		for (i = 0; i < num_of_threads; i++) /* If one of the thread dies we print the return codes of all threads in order to know exactly
+											 which thread caused the main process to crash*/
+		{
+			GetExitCodeThread(p_thread_handles[i], &exitcode_array[i]);
+			printf("Thread %d finished with exitcode 0x%x\n", i, exitcode_array[i]);
+		}
+		return -1;
 	}
 
-	for (i = 0; i < NUM_THREADS; i++)
-	{
-		ret_val = CloseHandle(p_thread_handles[i]);
-		if (false == ret_val)
+	for (i = 0; i < num_of_threads; i++) {  /* The print process itself, it happens outside the threads
+											and has a mechanism that prevents a print of an extra line in the end of the print. */
+		if (websites_array[i].reachable == 0) {
+			if (i < num_of_threads - 1) {
+				printf("%s unreachable\n", websites_array[i].name);
+			}
+			else {
+				printf("%s unreachable", websites_array[i].name);
+			}
+		}
+		else
 		{
-			printf("Error when closing\n");
-			return ERROR_CODE;
+			if (i < num_of_threads - 1) {
+				printf("%s reachable\n", websites_array[i].name);
+			}
+			else {
+				printf("%s reachable", websites_array[i].name);
+			}
 		}
 	}
-	printf("reachable is %d\n", webby.reachable);
-
+	free(p_thread_handles); //  Freeing the allocated memory
+	free(p_thread_ids);
+	free(websites_array);
+	free(exitcode_array);
+	return 0;
 }
 
 
 static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
-	website *lpParameter,
-	LPDWORD p_thread_id)
+	LPDWORD p_thread_id, website *lpParameter) // A wrapper to CreateThread() that also gets an input parameter
 {
-	HANDLE thread_handle;
-
-	if (NULL == p_start_routine)
-	{
-		printf("Error when creating a thread");
-		printf("Received null pointer");
-		exit(ERROR_CODE);
-	}
-
-	if (NULL == p_thread_id)
-	{
-		printf("Error when creating a thread");
-		printf("Received null pointer");
-		exit(ERROR_CODE);
-	}
-
-	thread_handle = CreateThread(
+	return CreateThread(
 		NULL,            /*  default security attributes */
 		0,               /*  use default stack size */
 		p_start_routine, /*  thread function */
-		lpParameter, /*  argument to thread function */
+		lpParameter,     /*  argument to thread function */
 		0,               /*  use default creation flags */
 		p_thread_id);    /*  returns the thread identifier */
-
-	if (NULL == thread_handle)
-	{
-		printf("Couldn't create thread\n");
-		exit(ERROR_CODE);
-	}
-
-	return thread_handle;
 }

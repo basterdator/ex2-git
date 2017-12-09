@@ -1,19 +1,34 @@
+/* ==============================================
+Introduction to Systems Programming
+Winter 2017-2018
+TEL-AVIV UNIVERSITY
+Exercise 2
+Uri Cohen                 302825807
+Anton Chaplianka          310224209
+============================================== */
+
+// No secure warnings, so we could use strcpy and strcat -----------------------
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
 #endif
+// Includes --------------------------------------------------------------------
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
 #include "Ping.h"
 
+// Global Variables ------------------------------------------------------------
 
-#define TIMEOUT_IN_MILLISECONDS INFINITE
+#define TIMEOUT_IN_MILLISECONDS 10000
 #define BRUTAL_TERMINATION_CODE 0x55
 
+// Declerations  --------------------------------------------------------------
 BOOL CreateProcessSimple(char *CommandLine, PROCESS_INFORMATION *ProcessInfoPtr);
-void CreateProcessSimpleMain(char *name);
+void CreateProcessSimpleMain(website *p_w);
 
+// The function Ping itself  ---------------------------------------------------
 
 DWORD WINAPI Ping(LPVOID lpParam)
 {
@@ -27,9 +42,9 @@ DWORD WINAPI Ping(LPVOID lpParam)
 	return 0;
 }
 
+// Sub-functions ---------------------------------------------------------------
 
-
-void CreateProcessSimpleMain(website *p_w)
+void CreateProcessSimpleMain(website *p_w) // A wrapper for CreateProcess()
 {
 	website w = *p_w;
 	PROCESS_INFORMATION procinfo;
@@ -38,20 +53,14 @@ void CreateProcessSimpleMain(website *p_w)
 	BOOL				retVal;
 	char				command[] = "ping -n 1 ";
 	char *p_str = NULL;
-	p_str = malloc((strlen(command) + strlen(w.name) )* sizeof(char) + 1);
- 	strcpy(p_str, command);
-	strcat(p_str,w.name);
+	p_str = malloc((strlen(command) + strlen(w.name)) * sizeof(char) + 1); /* we concatenate the two strings that create the command ==>
+																		   "ping" + "wbsite" */
+	strcpy(p_str, command);
+	strcat(p_str, w.name);
 
-
-																					
-																					/* <ISP> TCHAR is a win32  */
-																					/* generic char which may be either a simple (ANSI) char or a unicode char, */
-																					/* depending on behind-the-scenes operating system definitions. Type LPTSTR */
-																					/* is a string of TCHARs. Type LPCTSTR is a const string of TCHARs. */
-
-																					/*  Start the child process. */
+	/*  Start the child process. */
 	retVal = CreateProcessSimple(p_str, &procinfo);
-	free(p_str);
+	free(p_str);			/* The process has ended, we don't need the string anymore so we free the allocated memory */
 
 	if (retVal == 0)
 	{
@@ -62,17 +71,14 @@ void CreateProcessSimpleMain(website *p_w)
 
 	waitcode = WaitForSingleObject(
 		procinfo.hProcess,
-		TIMEOUT_IN_MILLISECONDS); /* Waiting 5 secs for the process to end */
+		TIMEOUT_IN_MILLISECONDS); /* Waiting 10 secs for the process to end */
 
-	printf("WaitForSingleObject output: ");
 	switch (waitcode)
 	{
 	case WAIT_TIMEOUT:
 		printf("WAIT_TIMEOUT\n"); break;
 	case WAIT_OBJECT_0:
-		printf("WAIT_OBJECT_0\n"); break;
-	default:
-		printf("0x%x\n", waitcode);
+		break;
 	}
 
 	if (waitcode == WAIT_TIMEOUT) /* Process is still alive */
@@ -87,36 +93,30 @@ void CreateProcessSimpleMain(website *p_w)
 
 	GetExitCodeProcess(procinfo.hProcess, &exitcode);
 
-	printf("The exit code for the process is 0x%x\n", exitcode);
 	if (exitcode == 0)
 	{
-		(*p_w).reachable = 1;
+		(*p_w).reachable = 1; /* We update the struct directly */
 	}
 	else
 	{
 		(*p_w).reachable = 0;
 	}
-	printf("reachable is %d\n", (*p_w).reachable);
 	CloseHandle(procinfo.hProcess); /* Closing the handle to the process */
 	CloseHandle(procinfo.hThread); /* Closing the handle to the main thread of the process */
 }
 
 BOOL CreateProcessSimple(char *CommandLine, PROCESS_INFORMATION *ProcessInfoPtr)
 {
-	STARTUPINFO	startinfo = { sizeof(STARTUPINFO), NULL, 0 }; /* <ISP> here we */
-															  /* initialize a "Neutral" STARTUPINFO variable. Supplying this to */
-															  /* CreateProcess() means we have no special interest in this parameter. */
-															  /* This is equivalent to what we are doing by supplying NULL to most other */
-															  /* parameters of CreateProcess(). */
+	STARTUPINFO	startinfo = { sizeof(STARTUPINFO), NULL, 0 };
 
-	return CreateProcess(NULL, /*  No module name (use command line). */
+	return CreateProcess(NULL,
 		CommandLine,			/*  Command line. */
-		NULL,					/*  Process handle not inheritable. */
-		NULL,					/*  Thread handle not inheritable. */
-		FALSE,					/*  Set handle inheritance to FALSE. */
-		NORMAL_PRIORITY_CLASS,	/*  creation/priority flags. */
-		NULL,					/*  Use parent's environment block. */
-		NULL,					/*  Use parent's starting directory. */
+		NULL,
+		NULL,
+		FALSE,
+		CREATE_NO_WINDOW,	/*  We use this flag to disable pings prints */
+		NULL,
+		NULL,
 		&startinfo,				/*  Pointer to STARTUPINFO structure. */
 		ProcessInfoPtr			/*  Pointer to PROCESS_INFORMATION structure. */
 	);
